@@ -3,11 +3,12 @@
 package Sys::Syscall;
 use strict;
 use POSIX qw(ENOSYS SEEK_CUR);
+use Config;
 
 require Exporter;
 use vars qw(@ISA @EXPORT_OK %EXPORT_TAGS $VERSION);
 
-$VERSION     = "0.1";
+$VERSION     = "0.20";
 @ISA         = qw(Exporter);
 @EXPORT_OK   = qw(sendfile epoll_ctl epoll_create epoll_wait EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLL_CTL_ADD EPOLL_CTL_DEL EPOLL_CTL_MOD);
 %EXPORT_TAGS = (epoll => [qw(epoll_ctl epoll_create epoll_wait EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP
@@ -52,6 +53,12 @@ if ($^O eq "linux") {
     # whether the machine requires 64-bit numbers to be on 8-byte
     # boundaries.
     my $u64_mod_8 = 0;
+
+    # if we're running on an x86_64 kernel, but a 32-bit process,
+    # we need to use the i386 syscall numbers.
+    if ($machine eq "x86_64" && $Config{ptrsize} == 4) {
+        $machine = "i386";
+    }
 
     if ($machine =~ m/^i[3456]86$/) {
         $SYS_epoll_create = 254;
@@ -305,7 +312,7 @@ actually sent, or -1 on error.
 
 =head1 COPYRIGHT
 
-This module is Copyright (c) 2005 Six Apart, Ltd.
+This module is Copyright (c) 2005, 2006 Six Apart, Ltd.
 
 All rights reserved.
 
