@@ -8,7 +8,7 @@ use Config;
 require Exporter;
 use vars qw(@ISA @EXPORT_OK %EXPORT_TAGS $VERSION);
 
-$VERSION     = "0.21";
+$VERSION     = "0.22";
 @ISA         = qw(Exporter);
 @EXPORT_OK   = qw(sendfile epoll_ctl epoll_create epoll_wait
                   EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLLRDBAND
@@ -225,7 +225,7 @@ sub epoll_wait_mod4 {
         $epoll_wait_events = "\0" x 12 x $epoll_wait_size;
     }
     my $ct = syscall($SYS_epoll_wait, $_[0]+0, $epoll_wait_events, $_[1]+0, $_[2]+0);
-    for ($_ = 0; $_ < $ct; $_++) {
+    for (0..$ct-1) {
         @{$_[3]->[$_]}[1,0] = unpack("LL", substr($epoll_wait_events, 12*$_, 8));
     }
     return $ct;
@@ -238,7 +238,7 @@ sub epoll_wait_mod8 {
         $epoll_wait_events = "\0" x 16 x $epoll_wait_size;
     }
     my $ct = syscall($SYS_epoll_wait, $_[0]+0, $epoll_wait_events, $_[1]+0, $_[2]+0);
-    for ($_ = 0; $_ < $ct; $_++) {
+    for (0..$ct-1) {
         # 16 byte epoll_event structs, with format:
         #    4 byte mask [idx 1]
         #    4 byte padding (we put it into idx 2, useless)
