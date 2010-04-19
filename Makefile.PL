@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #   Perl Makefile for Perlbal
-#   $Id: Makefile.PL 4 2005-07-30 04:56:21Z bradfitz $
+#   $Id$
 #
 #   Invoke with 'perl Makefile.PL'
 #

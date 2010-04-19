@@ -8,7 +8,7 @@ use Config;
 require Exporter;
 use vars qw(@ISA @EXPORT_OK %EXPORT_TAGS $VERSION);
 
-$VERSION     = "0.22";
+$VERSION     = "0.23";
 @ISA         = qw(Exporter);
 @EXPORT_OK   = qw(sendfile epoll_ctl epoll_create epoll_wait
                   EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLLRDBAND
@@ -324,6 +324,12 @@ You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl README file.
 If you need more liberal licensing terms, please contact the
 maintainer.
+
+=head1 Contributing
+
+Want to contribute?  See:
+
+  L<http://contributing.appspot.com/sys-syscall>
 
 =head1 WARRANTY
 
