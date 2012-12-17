@@ -3,18 +3,14 @@
 package Sys::Syscall;
 use strict;
 use POSIX qw(ENOSYS SEEK_CUR);
-use Config;
 
 require Exporter;
 use vars qw(@ISA @EXPORT_OK %EXPORT_TAGS $VERSION);
 
-$VERSION     = "0.23";
+$VERSION     = "0.25";
 @ISA         = qw(Exporter);
-@EXPORT_OK   = qw(sendfile epoll_ctl epoll_create epoll_wait
-                  EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLLRDBAND
-                  EPOLL_CTL_ADD EPOLL_CTL_DEL EPOLL_CTL_MOD);
-%EXPORT_TAGS = (epoll => [qw(epoll_ctl epoll_create epoll_wait
-                             EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLLRDBAND
+@EXPORT_OK   = qw(sendfile epoll_ctl epoll_create epoll_wait EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP EPOLL_CTL_ADD EPOLL_CTL_DEL EPOLL_CTL_MOD);
+%EXPORT_TAGS = (epoll => [qw(epoll_ctl epoll_create epoll_wait EPOLLIN EPOLLOUT EPOLLERR EPOLLHUP
                              EPOLL_CTL_ADD EPOLL_CTL_DEL EPOLL_CTL_MOD)],
                 sendfile => [qw(sendfile)],
                 );
@@ -23,7 +19,6 @@ use constant EPOLLIN       => 1;
 use constant EPOLLOUT      => 4;
 use constant EPOLLERR      => 8;
 use constant EPOLLHUP      => 16;
-use constant EPOLLRDBAND   => 128;
 use constant EPOLL_CTL_ADD => 1;
 use constant EPOLL_CTL_DEL => 2;
 use constant EPOLL_CTL_MOD => 3;
@@ -57,12 +52,6 @@ if ($^O eq "linux") {
     # whether the machine requires 64-bit numbers to be on 8-byte
     # boundaries.
     my $u64_mod_8 = 0;
-
-    # if we're running on an x86_64 kernel, but a 32-bit process,
-    # we need to use the i386 syscall numbers.
-    if ($machine eq "x86_64" && $Config{ptrsize} == 4) {
-        $machine = "i386";
-    }
 
     if ($machine =~ m/^i[3456]86$/) {
         $SYS_epoll_create = 254;
@@ -104,6 +93,14 @@ if ($^O eq "linux") {
         $SYS_epoll_ctl    = 408;
         $SYS_epoll_wait   = 409;
         $SYS_readahead    = 379;
+        $u64_mod_8        = 1;
+    } elsif ($machine =~ m/arm(v\d+)?.*l/) {
+        # ARM OABI
+        $SYS_epoll_create = 250;
+        $SYS_epoll_ctl    = 251;
+        $SYS_epoll_wait   = 252;
+        $SYS_sendfile     = 187;
+        $SYS_readahead    = 225;
         $u64_mod_8        = 1;
     } else {
         # as a last resort, try using the *.ph files which may not
@@ -225,7 +222,7 @@ sub epoll_wait_mod4 {
         $epoll_wait_events = "\0" x 12 x $epoll_wait_size;
     }
     my $ct = syscall($SYS_epoll_wait, $_[0]+0, $epoll_wait_events, $_[1]+0, $_[2]+0);
-    for (0..$ct-1) {
+    for ($_ = 0; $_ < $ct; $_++) {
         @{$_[3]->[$_]}[1,0] = unpack("LL", substr($epoll_wait_events, 12*$_, 8));
     }
     return $ct;
@@ -238,7 +235,7 @@ sub epoll_wait_mod8 {
         $epoll_wait_events = "\0" x 16 x $epoll_wait_size;
     }
     my $ct = syscall($SYS_epoll_wait, $_[0]+0, $epoll_wait_events, $_[1]+0, $_[2]+0);
-    for (0..$ct-1) {
+    for ($_ = 0; $_ < $ct; $_++) {
         # 16 byte epoll_event structs, with format:
         #    4 byte mask [idx 1]
         #    4 byte padding (we put it into idx 2, useless)
@@ -316,7 +313,7 @@ actually sent, or -1 on error.
 
 =head1 COPYRIGHT
 
-This module is Copyright (c) 2005, 2006 Six Apart, Ltd.
+This module is Copyright (c) 2005 Six Apart, Ltd.
 
 All rights reserved.
 
